@@ -1,18 +1,19 @@
-import { IsString, IsArray, IsOptional, IsIn, IsObject } from 'class-validator';
+import { IsString, IsArray, IsOptional, IsObject } from 'class-validator';
 
 class LongTextItem {
   @IsString()
-  word: string;
-
-  @IsIn(['keep', 'related', 'freeText'])
-  options: 'keep' | 'related' | 'freeText';
+  char: string;
 
   @IsOptional()
   @IsString()
   predestined?: string;
+
+  @IsOptional()
+  @IsString()
+  relatedTo?: string;
 }
 
-class mnemoOptions {
+class MnemoOptions {
   @IsString()
   style: string;
 }
@@ -25,5 +26,5 @@ export class CreateMnemoDto {
   description: string;
 
   @IsObject()
-  globalOptions: mnemoOptions;
+  globalOptions: MnemoOptions;
 }
