@@ -4,6 +4,7 @@ import { CreateMnemoDto } from 'src/dto/create-mnemo';
 @Injectable()
 export class MnemoService {
   createMnemo(data: CreateMnemoDto): any {
+    console.log('data:', data);
     return data;
   }
 
