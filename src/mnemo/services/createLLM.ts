@@ -1,34 +1,56 @@
 import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
+import { RunnableSequence } from '@langchain/core/runnables';
+import { OpenAI } from '@langchain/openai';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 import { CreateMnemoDto } from 'src/dto/create-mnemo';
+import { getInitialPrompt, selectorPrompt } from './Prompts';
 
-const createText =
-  'create an easily memorizable related text (mnemonic) for this acronym: {acronims}. ';
+export const invokeLLM = async (data: CreateMnemoDto) => {
+  const { characters } = data;
 
-export const invokeLLM = (data: CreateMnemoDto) => {
-  const { longText, description, globalOptions } = data;
-  const acronym = longText
-    .map(({ char }) => {
-      return char[0];
-    })
-    .join(', ');
-  console.log('data: ', acronym);
+  const initialPrompt = getInitialPrompt();
 
-  const chatModel = new ChatOpenAI({
-    maxTokens: 30,
+  const chatModel = new OpenAI({
+    temperature: 1,
+    maxTokens: 200,
+    modelName: 'gpt-3.5-turbo',
+    // modelName: 'gpt-4',
     openAIApiKey: process.env.OPENAI_KEY,
   });
 
   const prompt1 = new PromptTemplate({
-    inputVariables: ['acronims'],
-    template: createText,
+    inputVariables: ['obj'],
+    template: initialPrompt,
   });
 
-  const myChain = prompt1.pipe(chatModel);
-
-  // return null;
-
-  return myChain.invoke({
-    acronims: acronym,
+  const prompt2 = new PromptTemplate({
+    inputVariables: ['i'],
+    template: selectorPrompt,
   });
+
+  const outputParser = new StringOutputParser();
+
+  const logicChain = RunnableSequence.from([prompt1, chatModel, outputParser]);
+
+  const selectorChain = RunnableSequence.from([
+    prompt2,
+    chatModel,
+    outputParser,
+  ]);
+
+  const combinedChain = RunnableSequence.from([
+    {
+      obj: (inp) => inp.obj,
+    },
+    {
+      i: logicChain,
+    },
+    selectorChain,
+  ]);
+
+  const resp = await combinedChain.invoke({
+    obj: JSON.stringify(characters),
+  });
+
+  return resp;
 };

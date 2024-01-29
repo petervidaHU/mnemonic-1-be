@@ -1,16 +1,12 @@
 import { IsString, IsArray, IsOptional, IsObject } from 'class-validator';
 
-class LongTextItem {
+class characterItems {
   @IsString()
   char: string;
 
   @IsOptional()
   @IsString()
   predestined?: string;
-
-  @IsOptional()
-  @IsString()
-  relatedTo?: string;
 }
 
 class MnemoOptions {
@@ -20,7 +16,7 @@ class MnemoOptions {
 
 export class CreateMnemoDto {
   @IsArray()
-  longText: LongTextItem[];
+  characters: characterItems[];
 
   @IsString()
   description: string;
