@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { ChatOpenAI } from '@langchain/openai';
@@ -82,9 +83,16 @@ export const invokeLLM = async (data: Array<string>) => {
     selectorChain,
   ]);
 
-  const resp = await combinedChain.invoke({
+  const response = await combinedChain.invoke({
     obj: JSON.stringify(data),
   });
+  const returnObject = Object.values(response).map((answer) => {
+    return {
+      id: uuidv4(),
+      text: answer,
+    };
+  });
 
-  return resp;
+  console.log('resp:', returnObject);
+  return response;
 };
