@@ -4,7 +4,7 @@ export const getInitialPrompt = () => {
   Generate exactly 10 mnemonic phrases with all of these characters in the INPUT OBJECT below:
   
   The INPUT OBJECT:
-  [{obj}]
+  {obj}
     
   The mnemonics should be meaningful, and straightforward, and should not contain numbers, or any non-English words. 
   
@@ -21,7 +21,7 @@ export const getInitialPrompt = () => {
 
   Examples:
   input object: 
-  "char": "e","char": "w","char": "g","char": "d"
+  ["e","w","g","d"]
   
   Good answers: 
  ['elephant', 'with', 'giraffe', 'dance']
@@ -45,5 +45,5 @@ Good examples:
 ['elephant', 'wears', 'gray', 'dress']
 
 Choose the 3 best solution from this array: {i}
-The answer is:
+The answer is a JSON array:
 `;

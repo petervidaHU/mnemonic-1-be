@@ -1,16 +1,49 @@
 import { PromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
-import { OpenAI } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
 import { StringOutputParser } from '@langchain/core/output_parsers';
-import { CreateMnemoDto } from 'src/dto/create-mnemo';
+import { JsonOutputFunctionsParser } from 'langchain/output_parsers';
 import { getInitialPrompt, selectorPrompt } from './Prompts';
 
-export const invokeLLM = async (data: CreateMnemoDto) => {
-  const { characters } = data;
+const JSONFunctionSchema = {
+  name: 'extractor',
+  description: 'Extracts Arrays of strings from the input.',
+  parameters: {
+    type: 'object',
+    properties: {
+      answer1: {
+        type: 'array',
+        items: {
+          type: 'string',
+        },
+        description: 'The first array of the input',
+      },
+      answer2: {
+        type: 'array',
+        items: {
+          type: 'string',
+        },
+        description: 'The first array of the input',
+      },
+      answer3: {
+        type: 'array',
+        items: {
+          type: 'string',
+        },
+        description: 'The first array of the input',
+      },
+    },
+    required: [],
+  },
+};
+
+export const invokeLLM = async (data: Array<string>) => {
+  const outputParser = new StringOutputParser();
+  const JsonOutputParser = new JsonOutputFunctionsParser();
 
   const initialPrompt = getInitialPrompt();
 
-  const chatModel = new OpenAI({
+  const chatModel = new ChatOpenAI({
     temperature: 1,
     maxTokens: 200,
     modelName: 'gpt-3.5-turbo',
@@ -28,14 +61,15 @@ export const invokeLLM = async (data: CreateMnemoDto) => {
     template: selectorPrompt,
   });
 
-  const outputParser = new StringOutputParser();
-
   const logicChain = RunnableSequence.from([prompt1, chatModel, outputParser]);
 
   const selectorChain = RunnableSequence.from([
     prompt2,
-    chatModel,
-    outputParser,
+    chatModel.bind({
+      functions: [JSONFunctionSchema],
+      function_call: { name: 'extractor' },
+    }),
+    JsonOutputParser,
   ]);
 
   const combinedChain = RunnableSequence.from([
@@ -49,7 +83,7 @@ export const invokeLLM = async (data: CreateMnemoDto) => {
   ]);
 
   const resp = await combinedChain.invoke({
-    obj: JSON.stringify(characters),
+    obj: JSON.stringify(data),
   });
 
   return resp;

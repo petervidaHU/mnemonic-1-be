@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { MnemoService } from './mnemo.service';
-import { CreateMnemoDto } from '../dto/create-mnemo';
 
 @Controller('mnemo')
 export class MnemoController {
@@ -11,8 +10,8 @@ export class MnemoController {
     return this.mnemoService.getOneMnemo(id);
   }
 
-  @Post()
-  createMnemo(@Body() body: CreateMnemoDto): string {
-    return this.mnemoService.createMnemo(body);
+  @Get('create/:id')
+  createOneMnemo(@Param('id') id: string): string {
+    return this.mnemoService.createMnemo(id);
   }
 }

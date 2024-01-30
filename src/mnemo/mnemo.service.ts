@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { CreateMnemoDto } from 'src/dto/create-mnemo';
 import { invokeLLM } from './services/createLLM';
 
 @Injectable()
 export class MnemoService {
-  createMnemo(data: CreateMnemoDto): any {
-    const resp = invokeLLM(data);
+  createMnemo(data: string): any {
+    const resp = invokeLLM([...data.split('')]);
 
     return resp;
   }
