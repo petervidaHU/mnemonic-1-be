@@ -4,46 +4,57 @@ import { RunnableSequence } from '@langchain/core/runnables';
 import { ChatOpenAI } from '@langchain/openai';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { JsonOutputFunctionsParser } from 'langchain/output_parsers';
-import { getInitialPrompt, selectorPrompt } from './Prompts';
+import { initialPrompt, selectorPrompt } from './Prompts';
 
-const JSONFunctionSchema = {
+const JSONFunctionSchemaIn = {
   name: 'extractor',
-  description: 'Extracts Arrays of strings from the input.',
+  description: 'Extracts strings from the input Array.',
   parameters: {
     type: 'object',
     properties: {
       answer1: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-        description: 'The first array of the input',
+        type: 'string',
+        description: 'The first item of the input',
       },
       answer2: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-        description: 'The first array of the input',
+        type: 'string',
+        description: 'The second item of the input',
       },
       answer3: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-        description: 'The first array of the input',
+        type: 'string',
+        description: 'The third item of the input',
       },
     },
     required: [],
   },
 };
 
+const clearing = (inputString: string) =>
+  inputString.replace(/^\d+\.\s/gm, '').replace(/\n/g, '');
+
+const sanitizeLogicOutput = ({
+  mnemonicsList,
+  original,
+}: {
+  mnemonicsList: string;
+  original: string;
+}) => {
+  const originalLength = original.split(', ').length;
+  const mnemonics = mnemonicsList.split('/');
+
+  const finalMnemonics: Array<string> = mnemonics
+    .filter((mnemonic) => {
+      const thisMnemo = clearing(mnemonic).trim().split(' ');
+      return thisMnemo.length === originalLength;
+    })
+    .map((filteredMnemonics) => filteredMnemonics.trim());
+
+  return {
+    mnemonicsArray: finalMnemonics,
+  };
+};
+
 export const invokeLLM = async (data: Array<string>) => {
-  const outputParser = new StringOutputParser();
-  const JsonOutputParser = new JsonOutputFunctionsParser();
-
-  const initialPrompt = getInitialPrompt();
-
   const chatModel = new ChatOpenAI({
     temperature: 1,
     maxTokens: 200,
@@ -52,25 +63,29 @@ export const invokeLLM = async (data: Array<string>) => {
     openAIApiKey: process.env.OPENAI_KEY,
   });
 
-  const prompt1 = new PromptTemplate({
+  const promptForLogic = new PromptTemplate({
     inputVariables: ['obj'],
     template: initialPrompt,
   });
 
-  const prompt2 = new PromptTemplate({
-    inputVariables: ['i'],
+  const promptForSelector = new PromptTemplate({
+    inputVariables: ['mnemonicsArray'],
     template: selectorPrompt,
   });
 
-  const logicChain = RunnableSequence.from([prompt1, chatModel, outputParser]);
+  const logicChain = RunnableSequence.from([
+    promptForLogic,
+    chatModel,
+    new StringOutputParser(),
+  ]);
 
   const selectorChain = RunnableSequence.from([
-    prompt2,
+    promptForSelector,
     chatModel.bind({
-      functions: [JSONFunctionSchema],
+      functions: [JSONFunctionSchemaIn],
       function_call: { name: 'extractor' },
     }),
-    JsonOutputParser,
+    new JsonOutputFunctionsParser(),
   ]);
 
   const combinedChain = RunnableSequence.from([
@@ -78,14 +93,17 @@ export const invokeLLM = async (data: Array<string>) => {
       obj: (inp) => inp.obj,
     },
     {
-      i: logicChain,
+      mnemonicsList: logicChain,
+      original: (inp) => inp.obj,
     },
+    (obj) => sanitizeLogicOutput(obj),
     selectorChain,
   ]);
 
   const response = await combinedChain.invoke({
-    obj: JSON.stringify(data),
+    obj: data.join(', '),
   });
+
   const returnObject = Object.values(response).map((answer) => {
     return {
       id: uuidv4(),
@@ -93,6 +111,5 @@ export const invokeLLM = async (data: Array<string>) => {
     };
   });
 
-  console.log('resp:', returnObject);
-  return response;
+  return returnObject;
 };
