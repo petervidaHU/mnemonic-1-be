@@ -39,15 +39,18 @@ const sanitizeLogicOutput = ({
   mnemonicsList: string;
   original: string;
 }) => {
-  const originalLength = original.split(', ').length;
+  const originalArray = original.split(', ');
   const mnemonics = mnemonicsList.split('/');
 
   const finalMnemonics: Array<string> = mnemonics
     .filter((mnemonic) => {
       const thisMnemo = clearing(mnemonic).trim().split(' ');
-      return thisMnemo.length === originalLength;
+      return thisMnemo.length === originalArray.length;
     })
-    .map((filteredMnemonics) => filteredMnemonics.trim());
+    .map((filteredMnemo) => filteredMnemo.trim())
+    .filter((mnemo) =>
+      mnemo.split(' ').every((word, idx) => word[0] === originalArray[idx]),
+    );
 
   return {
     mnemonicsArray: finalMnemonics,
