@@ -72,14 +72,13 @@ export const invokeLLM = async (data: Array<string>) => {
   };
 
   const getResponse = async (responseArray: Array<string>) => {
-    if (responseArray.length === 0) return [];
-    if (responseArray.length < 3) return returnObject(responseArray);
+    if (responseArray.length < 3) return returnObject(data, responseArray);
 
     const { answers } = await selectorChain.invoke({
       mnemonicsArray: responseArray,
     });
 
-    return returnObject(answers);
+    return returnObject(data, answers);
   };
 
   const { mnemonicsArray } = await getStarterMnemonics(data);

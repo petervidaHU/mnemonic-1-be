@@ -28,10 +28,12 @@ export const sanitizeLogicOutput = ({
   };
 };
 
-export const returnObject = (rawResponse: Array<string>) =>
-  rawResponse
+export const returnObject = (acronym, rawResponse: Array<string>) => ({
+  acronym: acronym.join(''),
+  data: rawResponse
     .filter((answer) => answer !== '')
     .map((answer) => ({
       id: uuidv4(),
       text: answer,
-    }));
+    })),
+});
