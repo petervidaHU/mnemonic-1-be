@@ -1,61 +1,11 @@
-import { v4 as uuidv4 } from 'uuid';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { ChatOpenAI } from '@langchain/openai';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { JsonOutputFunctionsParser } from 'langchain/output_parsers';
 import { initialPrompt, selectorPrompt } from './Prompts';
-
-const JSONFunctionSchemaIn = {
-  name: 'extractor',
-  description: 'Extracts strings from the input Array.',
-  parameters: {
-    type: 'object',
-    properties: {
-      answer1: {
-        type: 'string',
-        description: 'The first item of the input',
-      },
-      answer2: {
-        type: 'string',
-        description: 'The second item of the input',
-      },
-      answer3: {
-        type: 'string',
-        description: 'The third item of the input',
-      },
-    },
-    required: [],
-  },
-};
-
-const clearing = (inputString: string) =>
-  inputString.replace(/^\d+\.\s/gm, '').replace(/\n/g, '');
-
-const sanitizeLogicOutput = ({
-  mnemonicsList,
-  original,
-}: {
-  mnemonicsList: string;
-  original: string;
-}) => {
-  const originalArray = original.split(', ');
-  const mnemonics = mnemonicsList.split('/');
-
-  const finalMnemonics: Array<string> = mnemonics
-    .filter((mnemonic) => {
-      const thisMnemo = clearing(mnemonic).trim().split(' ');
-      return thisMnemo.length === originalArray.length;
-    })
-    .map((filteredMnemo) => filteredMnemo.trim())
-    .filter((mnemo) =>
-      mnemo.split(' ').every((word, idx) => word[0] === originalArray[idx]),
-    );
-
-  return {
-    mnemonicsArray: finalMnemonics,
-  };
-};
+import { JSONFunctionSchemaIn } from './schemas';
+import { returnObject, sanitizeLogicOutput } from './utilities';
 
 export const invokeLLM = async (data: Array<string>) => {
   const chatModel = new ChatOpenAI({
@@ -67,7 +17,7 @@ export const invokeLLM = async (data: Array<string>) => {
   });
 
   const promptForLogic = new PromptTemplate({
-    inputVariables: ['obj'],
+    inputVariables: ['acronyms'],
     template: initialPrompt,
   });
 
@@ -91,49 +41,48 @@ export const invokeLLM = async (data: Array<string>) => {
     new JsonOutputFunctionsParser(),
   ]);
 
-  const checkBeforeSelector = ({
-    mnemonicsArray,
-  }: {
-    mnemonicsArray: Array<string>;
-  }) => {
-    if (mnemonicsArray.length > 0) {
-      console.log('memonicsarray is 1', mnemonicsArray);
-      return selectorChain;
-    } else {
-      console.log('menomicsarray is 0');
-      return null;
-    }
-  };
-
   const combinedChain = RunnableSequence.from([
     {
-      obj: (inp) => inp.obj,
+      acronyms: (i) => i.acronyms,
     },
     {
       mnemonicsList: logicChain,
-      original: (inp) => inp.obj,
+      original: (i) => i.acronyms,
     },
     sanitizeLogicOutput,
-    checkBeforeSelector,
   ]);
 
-  let response: RunnableSequence<{ mnemonicsArray: any }, never> | null;
-  let i = 0;
+  const getStarterMnemonics = async (data) => {
+    type ResponseType = any;
+    let response: ResponseType;
+    let i = 0;
 
-  do {
-    response = await combinedChain.invoke({
-      obj: data.join(', '),
+    do {
+      response = await combinedChain.invoke({
+        acronyms: data.join(', '),
+      });
+      i++;
+    } while (
+      i < 5 &&
+      response.mnemonicsArray &&
+      response.mnemonicsArray.length === 0
+    );
+
+    return response;
+  };
+
+  const getResponse = async (responseArray: Array<string>) => {
+    if (responseArray.length === 0) return [];
+    if (responseArray.length < 3) return returnObject(responseArray);
+
+    const { answers } = await selectorChain.invoke({
+      mnemonicsArray: responseArray,
     });
-    i++;
-  } while (i < 5 && response == null);
 
-  const returnObject = (r: RunnableSequence<{ mnemonicsArray: any }, never>) =>
-    Object.values(r)
-      .filter((answer) => answer !== '')
-      .map((answer) => ({
-        id: uuidv4(),
-        text: answer,
-      }));
+    return returnObject(answers);
+  };
 
-  return response == null ? [] : returnObject(response);
+  const { mnemonicsArray } = await getStarterMnemonics(data);
+
+  return getResponse(mnemonicsArray);
 };

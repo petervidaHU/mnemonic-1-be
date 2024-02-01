@@ -4,15 +4,16 @@ export const initialPrompt = `You are a very well-educated crossword puzzle solv
   Generate exactly 5 mnemonic phrases with all of these characters in the INPUT CHARACTERS below:
    
   The INPUT CHARACTERS:
-  "{obj}"
+  "{acronyms}"
       
   The mnemonics should be meaningful, as a complete phrase, and not contain numbers, or any non-English words. 
   
   The order of the INPUT CHARACTERS is important. The first character of each word in the mnemonics must follow the same order.
      
   Use nouns, adjectives that could be visualized well, and active verbs rather than abstract concepts. 
-  You can use words like 'with', 'is', 'are' 'without', 'that', 'when', 'where', 'how', 'why', 'which', 'who', 'whom', 'whose', 'why', 'how', 'what',
-  Try to use well-known, simple words that children can understand.
+  Prefer words like 'with', 'is', 'are' 'without', 'that',
+  Prefer color related words words like blue, green, white, yellow, brown, purple, pink.
+  Try to use well-known, simple words that children can understand like color names and animal names.
   The ultimate goal is to get a text that is easy to remember, and easy to draw.
       
   Format of the mnemonics with a separator: / 
@@ -23,8 +24,8 @@ export const initialPrompt = `You are a very well-educated crossword puzzle solv
     "e,w,g,d"
       mnemonics: elephant with giraffe dance/
   
-    "e,d,f"
-      mnemonics: elegant duck fly/
+    "b,d,f"
+      mnemonics: black duck fly/
   
     "w,r,i,e,s"
       mnemonics: whale roams in endless seas/
@@ -38,21 +39,20 @@ export const initialPrompt = `You are a very well-educated crossword puzzle solv
     "a,w,d,e"
       mnemonics: astronauts wonder discovering exoplanets/
 
-    "k,l,m"
-      mnemonics: kittens licking milk/  
+    "y,k,l,m"
+      mnemonics: yellow kittens licking milk/  
 
-    "{obj}"
+    "{acronyms}"
       mnemonics:  
  `;
 
 export const selectorPrompt = `
 An input array is given. We are looking for a good mnemonic phrase that is easy to remember, easy to draw, and meaningful. 
+If the input array is empty, the answer must be an empty array. 
+If the input array contains less than 3 element, the answer must be the input array.
 
-Good examples:
-"elephant walks gently down"
-"eagle with golden wings"
-"elephant wears gray dress"
+input array: {mnemonicsArray}
 
-Choose the 3 best solution from this array: {mnemonicsArray}
+Choose the 3 best solution, if possible from the input array! 
 The answer is a JSON array:
 `;
