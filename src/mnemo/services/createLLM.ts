@@ -52,8 +52,6 @@ const sanitizeLogicOutput = ({
       mnemo.split(' ').every((word, idx) => word[0] === originalArray[idx]),
     );
 
-  console.log('finalMnemonics', finalMnemonics);
-
   return {
     mnemonicsArray: finalMnemonics,
   };
@@ -93,6 +91,20 @@ export const invokeLLM = async (data: Array<string>) => {
     new JsonOutputFunctionsParser(),
   ]);
 
+  const checkBeforeSelector = ({
+    mnemonicsArray,
+  }: {
+    mnemonicsArray: Array<string>;
+  }) => {
+    if (mnemonicsArray.length > 0) {
+      console.log('memonicsarray is 1', mnemonicsArray);
+      return selectorChain;
+    } else {
+      console.log('menomibcsarr 0');
+      return null;
+    }
+  };
+
   const combinedChain = RunnableSequence.from([
     {
       obj: (inp) => inp.obj,
@@ -101,20 +113,21 @@ export const invokeLLM = async (data: Array<string>) => {
       mnemonicsList: logicChain,
       original: (inp) => inp.obj,
     },
-    (obj) => sanitizeLogicOutput(obj),
-    selectorChain,
+    sanitizeLogicOutput,
+    checkBeforeSelector,
   ]);
 
   const response = await combinedChain.invoke({
     obj: data.join(', '),
   });
 
-  const returnObject = Object.values(response)
-    .filter((answer) => answer !== '')
-    .map((answer) => ({
-      id: uuidv4(),
-      text: answer,
-    }));
+  const returnObject = (r: RunnableSequence<{ mnemonicsArray: any }, never>) =>
+    Object.values(r)
+      .filter((answer) => answer !== '')
+      .map((answer) => ({
+        id: uuidv4(),
+        text: answer,
+      }));
 
-  return returnObject;
+  return response == null ? [] : returnObject(response);
 };
