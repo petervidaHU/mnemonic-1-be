@@ -52,6 +52,8 @@ const sanitizeLogicOutput = ({
       mnemo.split(' ').every((word, idx) => word[0] === originalArray[idx]),
     );
 
+  console.log('finalMnemonics', finalMnemonics);
+
   return {
     mnemonicsArray: finalMnemonics,
   };
@@ -107,12 +109,12 @@ export const invokeLLM = async (data: Array<string>) => {
     obj: data.join(', '),
   });
 
-  const returnObject = Object.values(response).map((answer) => {
-    return {
+  const returnObject = Object.values(response)
+    .filter((answer) => answer !== '')
+    .map((answer) => ({
       id: uuidv4(),
       text: answer,
-    };
-  });
+    }));
 
   return returnObject;
 };
