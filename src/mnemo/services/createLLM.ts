@@ -100,7 +100,7 @@ export const invokeLLM = async (data: Array<string>) => {
       console.log('memonicsarray is 1', mnemonicsArray);
       return selectorChain;
     } else {
-      console.log('menomibcsarr 0');
+      console.log('menomicsarray is 0');
       return null;
     }
   };
