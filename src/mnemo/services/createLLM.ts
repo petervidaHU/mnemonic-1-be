@@ -117,9 +117,15 @@ export const invokeLLM = async (data: Array<string>) => {
     checkBeforeSelector,
   ]);
 
-  const response = await combinedChain.invoke({
-    obj: data.join(', '),
-  });
+  let response: RunnableSequence<{ mnemonicsArray: any }, never> | null;
+  let i = 0;
+
+  do {
+    response = await combinedChain.invoke({
+      obj: data.join(', '),
+    });
+    i++;
+  } while (i < 5 && response == null);
 
   const returnObject = (r: RunnableSequence<{ mnemonicsArray: any }, never>) =>
     Object.values(r)
