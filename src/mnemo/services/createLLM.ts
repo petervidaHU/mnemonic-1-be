@@ -12,7 +12,7 @@ export const invokeLLM = async (data: Array<string>) => {
     temperature: 1,
     maxTokens: 200,
     modelName: 'gpt-3.5-turbo',
-    // modelName: 'gpt-4',
+    // modelName: 'gpt-4-0613',
     openAIApiKey: process.env.OPENAI_KEY,
   });
 
@@ -62,16 +62,21 @@ export const invokeLLM = async (data: Array<string>) => {
         acronyms: data.join(', '),
       });
       i++;
+      console.log('response in iteration: ', response.mnemonicsArray);
     } while (
       i < 5 &&
       response.mnemonicsArray &&
       response.mnemonicsArray.length === 0
     );
+    console.log('iteration of Logic prompt: ', i);
+    console.log('---------------------------------');
 
     return response;
   };
 
   const getResponse = async (responseArray: Array<string>) => {
+    console.log('----GETRESPONSE------------------------');
+    console.log('incoming: ', responseArray);
     if (responseArray.length < 3) return returnObject(data, responseArray);
 
     const { answers } = await selectorChain.invoke({
@@ -80,6 +85,13 @@ export const invokeLLM = async (data: Array<string>) => {
 
     return returnObject(data, answers);
   };
+
+  console.log('-');
+  console.log('-');
+  console.log('-');
+  console.log('-');
+  console.log('-');
+  console.log('-', data);
 
   const { mnemonicsArray } = await getStarterMnemonics(data);
 

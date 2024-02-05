@@ -12,10 +12,13 @@ export const sanitizeLogicOutput = ({
 }) => {
   const originalArray = original.split(', ');
   const mnemonics = mnemonicsList.split('/');
+  console.log('----start sanitizing------');
 
   const finalMnemonics: Array<string> = mnemonics
     .filter((mnemonic) => {
+      console.log('mnemos in sanitizng before: ', mnemonic);
       const thisMnemo = clearing(mnemonic).trim().split(' ');
+      console.log('mnemos in sanitizng after: ', thisMnemo);
       return thisMnemo.length === originalArray.length;
     })
     .map((filteredMnemo) => filteredMnemo.trim())
@@ -23,13 +26,15 @@ export const sanitizeLogicOutput = ({
       mnemo.split(' ').every((word, idx) => word[0] === originalArray[idx]),
     );
 
+  console.log('final sanitized: ', finalMnemonics);
+  console.log('----end sanitizing------');
   return {
     mnemonicsArray: finalMnemonics,
   };
 };
 
 export const returnObject = (acronym, rawResponse: Array<string>) => ({
-  acronym: acronym.join(''),
+  acronyms: acronym.join(''),
   data: rawResponse
     .filter((answer) => answer !== '')
     .map((answer) => ({
