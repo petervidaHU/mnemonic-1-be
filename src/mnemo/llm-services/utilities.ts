@@ -1,3 +1,4 @@
+import { MnemoApiResponse } from 'src/types/mnemoTypes';
 import { v4 as uuidv4 } from 'uuid';
 
 const clearing = (inputString: string) =>
@@ -33,7 +34,10 @@ export const sanitizeLogicOutput = ({
   };
 };
 
-export const returnObject = (acronym, rawResponse: Array<string>) => ({
+export const returnObject = (
+  acronym,
+  rawResponse: Array<string>,
+): MnemoApiResponse => ({
   acronyms: acronym.join(''),
   data: rawResponse
     .filter((answer) => answer !== '')
